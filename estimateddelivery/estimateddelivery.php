@@ -34,7 +34,8 @@ class EstimatedDelivery extends Module
         Configuration::updateValue('ESTIMATED_DELIVERY_HOLIDAYS', $this->getDefaultItalianHolidays());
         Configuration::updateValue('ESTIMATED_DELIVERY_ENABLED', 1);
         Configuration::updateValue('ESTIMATED_DELIVERY_TEXT', 'Consegna prevista entro il: {date}');
-        
+        Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_POSITION', 'displayProductAdditionalInfo');
+
         // Configurazioni per il countdown
         Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED', 1);
         Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_HOUR', 14);
@@ -42,9 +43,13 @@ class EstimatedDelivery extends Module
         Configuration::updateValue('ESTIMATED_DELIVERY_AFTER_HOURS_DAYS', 3);
         Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_TEXT', 'Ordina entro {countdown} e ricevi il prodotto il {date}');
         Configuration::updateValue('ESTIMATED_DELIVERY_AFTER_HOURS_TEXT', 'Ordina oggi e lo ricevi il {date}');
-        
+
         return parent::install() &&
             $this->registerHook('displayEstimatedDelivery') && // Hook personalizzato
+            $this->registerHook('displayProductAdditionalInfo') && // Sotto il prezzo
+            $this->registerHook('displayReassurance') && // Zona rassicurazione
+            $this->registerHook('displayProductButtons') && // Vicino ai pulsanti
+            $this->registerHook('displayAfterProductName') && // Dopo nome prodotto
             $this->registerHook('header');
     }
 
@@ -56,6 +61,7 @@ class EstimatedDelivery extends Module
         Configuration::deleteByName('ESTIMATED_DELIVERY_HOLIDAYS');
         Configuration::deleteByName('ESTIMATED_DELIVERY_ENABLED');
         Configuration::deleteByName('ESTIMATED_DELIVERY_TEXT');
+        Configuration::deleteByName('ESTIMATED_DELIVERY_HOOK_POSITION');
         Configuration::deleteByName('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED');
         Configuration::deleteByName('ESTIMATED_DELIVERY_COUNTDOWN_HOUR');
         Configuration::deleteByName('ESTIMATED_DELIVERY_COUNTDOWN_DAYS');
@@ -107,7 +113,8 @@ class EstimatedDelivery extends Module
             $holidays = Tools::getValue('ESTIMATED_DELIVERY_HOLIDAYS');
             $enabled = (int)Tools::getValue('ESTIMATED_DELIVERY_ENABLED');
             $text = Tools::getValue('ESTIMATED_DELIVERY_TEXT');
-            
+            $hookPosition = Tools::getValue('ESTIMATED_DELIVERY_HOOK_POSITION');
+
             $countdownEnabled = (int)Tools::getValue('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED');
             $countdownHour = (int)Tools::getValue('ESTIMATED_DELIVERY_COUNTDOWN_HOUR');
             $countdownDays = (int)Tools::getValue('ESTIMATED_DELIVERY_COUNTDOWN_DAYS');
@@ -120,21 +127,22 @@ class EstimatedDelivery extends Module
             } else {
                 // Validazione holidays
                 $validatedHolidays = $this->validateHolidays($holidays);
-                
+
                 Configuration::updateValue('ESTIMATED_DELIVERY_DAYS', $deliveryDays);
                 Configuration::updateValue('ESTIMATED_DELIVERY_EXCLUDE_SATURDAY', $excludeSaturday);
                 Configuration::updateValue('ESTIMATED_DELIVERY_EXCLUDE_SUNDAY', $excludeSunday);
                 Configuration::updateValue('ESTIMATED_DELIVERY_HOLIDAYS', $validatedHolidays);
                 Configuration::updateValue('ESTIMATED_DELIVERY_ENABLED', $enabled);
                 Configuration::updateValue('ESTIMATED_DELIVERY_TEXT', pSQL($text));
-                
+                Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_POSITION', pSQL($hookPosition));
+
                 Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED', $countdownEnabled);
                 Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_HOUR', $countdownHour);
                 Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_DAYS', $countdownDays);
                 Configuration::updateValue('ESTIMATED_DELIVERY_AFTER_HOURS_DAYS', $afterHoursDays);
                 Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_TEXT', pSQL($countdownText));
                 Configuration::updateValue('ESTIMATED_DELIVERY_AFTER_HOURS_TEXT', pSQL($afterHoursText));
-                
+
                 $output .= $this->displayConfirmation($this->l('Impostazioni salvate con successo'));
             }
         }
@@ -196,6 +204,38 @@ class EstimatedDelivery extends Module
                                 'label' => $this->l('No')
                             ]
                         ],
+                    ],
+                    [
+                        'type' => 'select',
+                        'label' => $this->l('Posizione visualizzazione'),
+                        'name' => 'ESTIMATED_DELIVERY_HOOK_POSITION',
+                        'desc' => $this->l('Scegli dove visualizzare le informazioni di consegna nella pagina prodotto. Importante per Creative Elements e page builder.'),
+                        'options' => [
+                            'query' => [
+                                [
+                                    'id' => 'displayProductAdditionalInfo',
+                                    'name' => $this->l('Sotto il prezzo (displayProductAdditionalInfo) - Consigliato')
+                                ],
+                                [
+                                    'id' => 'displayReassurance',
+                                    'name' => $this->l('Zona rassicurazione (displayReassurance)')
+                                ],
+                                [
+                                    'id' => 'displayAfterProductName',
+                                    'name' => $this->l('Dopo il nome prodotto (displayAfterProductName)')
+                                ],
+                                [
+                                    'id' => 'displayProductButtons',
+                                    'name' => $this->l('Vicino ai pulsanti (displayProductButtons)')
+                                ],
+                                [
+                                    'id' => 'displayEstimatedDelivery',
+                                    'name' => $this->l('Hook personalizzato (displayEstimatedDelivery) - Solo template manuale')
+                                ],
+                            ],
+                            'id' => 'id',
+                            'name' => 'name'
+                        ]
                     ],
                     [
                         'type' => 'html',
@@ -382,6 +422,7 @@ class EstimatedDelivery extends Module
             'ESTIMATED_DELIVERY_HOLIDAYS' => Configuration::get('ESTIMATED_DELIVERY_HOLIDAYS'),
             'ESTIMATED_DELIVERY_ENABLED' => Configuration::get('ESTIMATED_DELIVERY_ENABLED'),
             'ESTIMATED_DELIVERY_TEXT' => Configuration::get('ESTIMATED_DELIVERY_TEXT'),
+            'ESTIMATED_DELIVERY_HOOK_POSITION' => Configuration::get('ESTIMATED_DELIVERY_HOOK_POSITION'),
             'ESTIMATED_DELIVERY_COUNTDOWN_ENABLED' => Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED'),
             'ESTIMATED_DELIVERY_COUNTDOWN_HOUR' => Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_HOUR'),
             'ESTIMATED_DELIVERY_COUNTDOWN_DAYS' => Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_DAYS'),
@@ -462,39 +503,86 @@ class EstimatedDelivery extends Module
      */
     public function hookDisplayEstimatedDelivery($params)
     {
+        return $this->renderDeliveryInfo('displayEstimatedDelivery');
+    }
+
+    /**
+     * Hook standard PrestaShop - Sotto il prezzo del prodotto
+     */
+    public function hookDisplayProductAdditionalInfo($params)
+    {
+        return $this->renderDeliveryInfo('displayProductAdditionalInfo');
+    }
+
+    /**
+     * Hook standard PrestaShop - Zona rassicurazione
+     */
+    public function hookDisplayReassurance($params)
+    {
+        return $this->renderDeliveryInfo('displayReassurance');
+    }
+
+    /**
+     * Hook standard PrestaShop - Vicino ai pulsanti acquisto
+     */
+    public function hookDisplayProductButtons($params)
+    {
+        return $this->renderDeliveryInfo('displayProductButtons');
+    }
+
+    /**
+     * Hook standard PrestaShop - Dopo il nome del prodotto
+     */
+    public function hookDisplayAfterProductName($params)
+    {
+        return $this->renderDeliveryInfo('displayAfterProductName');
+    }
+
+    /**
+     * Metodo centralizzato per renderizzare le informazioni di consegna
+     * Controlla se l'hook corrente corrisponde alla posizione configurata
+     */
+    private function renderDeliveryInfo($currentHook)
+    {
         if (!Configuration::get('ESTIMATED_DELIVERY_ENABLED')) {
+            return '';
+        }
+
+        // Controlla se questo è l'hook selezionato nella configurazione
+        $selectedHook = Configuration::get('ESTIMATED_DELIVERY_HOOK_POSITION');
+        if ($selectedHook !== $currentHook) {
             return '';
         }
 
         $countdownEnabled = Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED');
         $countdownHour = (int)Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_HOUR');
-        
+
         // Ottieni l'ora corrente
         $now = new DateTime();
         $currentHour = (int)$now->format('H');
-        
+
         $showCountdown = false;
         $displayText = '';
         $deliveryDays = 0;
         $countdownEndTime = null;
         $estimatedDate = null;
-        
+
         if ($countdownEnabled && $currentHour < $countdownHour) {
             // Siamo prima dell'ora limite - mostra countdown
             $showCountdown = true;
             $deliveryDays = (int)Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_DAYS');
-            
+
             // Calcola la data di consegna stimata
             $estimatedDate = $this->calculateEstimatedDelivery(null, $deliveryDays);
-            
+
             if (!$estimatedDate) {
                 return '';
             }
-            
+
             // Calcola quando finisce il countdown (oggi alle countdownHour)
             $countdownEndTime = new DateTime();
             $countdownEndTime->setTime($countdownHour, 0, 0);
-            
+
             // Formatta la data in italiano
             $formatter = new IntlDateFormatter(
                 'it_IT',
@@ -502,24 +590,24 @@ class EstimatedDelivery extends Module
                 IntlDateFormatter::NONE
             );
             $formattedDate = $formatter->format($estimatedDate->getTimestamp());
-            
+
             $text = Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_TEXT');
             $displayText = str_replace('{date}', $formattedDate, $text);
             $displayText = str_replace('{days}', $deliveryDays, $displayText);
             // {countdown} verrà gestito in JavaScript
-            
+
         } elseif ($countdownEnabled && $currentHour >= $countdownHour) {
             // Siamo dopo l'ora limite - mostra data di consegna ritardata
             $showCountdown = false;
             $deliveryDays = (int)Configuration::get('ESTIMATED_DELIVERY_AFTER_HOURS_DAYS');
-            
+
             // Calcola la data di consegna stimata
             $estimatedDate = $this->calculateEstimatedDelivery(null, $deliveryDays);
-            
+
             if (!$estimatedDate) {
                 return '';
             }
-            
+
             // Formatta la data in italiano
             $formatter = new IntlDateFormatter(
                 'it_IT',
@@ -527,15 +615,15 @@ class EstimatedDelivery extends Module
                 IntlDateFormatter::NONE
             );
             $formattedDate = $formatter->format($estimatedDate->getTimestamp());
-            
+
             $text = Configuration::get('ESTIMATED_DELIVERY_AFTER_HOURS_TEXT');
             $displayText = str_replace('{date}', $formattedDate, $text);
             $displayText = str_replace('{days}', $deliveryDays, $displayText);
-            
+
         } else {
             // Countdown disabilitato - mostra data stimata normale
             $estimatedDate = $this->calculateEstimatedDelivery();
-            
+
             if (!$estimatedDate) {
                 return '';
             }
