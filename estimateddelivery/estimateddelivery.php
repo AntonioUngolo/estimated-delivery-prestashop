@@ -34,7 +34,13 @@ class EstimatedDelivery extends Module
         Configuration::updateValue('ESTIMATED_DELIVERY_HOLIDAYS', $this->getDefaultItalianHolidays());
         Configuration::updateValue('ESTIMATED_DELIVERY_ENABLED', 1);
         Configuration::updateValue('ESTIMATED_DELIVERY_TEXT', 'Consegna prevista entro il: {date}');
-        Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_POSITION', 'displayProductAdditionalInfo');
+
+        // Configurazioni posizioni hook (default: solo displayProductAdditionalInfo attivo)
+        Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayProductAdditionalInfo', 1);
+        Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayReassurance', 0);
+        Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayAfterProductName', 0);
+        Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayProductButtons', 0);
+        Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery', 0);
 
         // Configurazioni per il countdown
         Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED', 1);
@@ -61,7 +67,14 @@ class EstimatedDelivery extends Module
         Configuration::deleteByName('ESTIMATED_DELIVERY_HOLIDAYS');
         Configuration::deleteByName('ESTIMATED_DELIVERY_ENABLED');
         Configuration::deleteByName('ESTIMATED_DELIVERY_TEXT');
-        Configuration::deleteByName('ESTIMATED_DELIVERY_HOOK_POSITION');
+
+        // Elimina configurazioni hook
+        Configuration::deleteByName('ESTIMATED_DELIVERY_HOOK_displayProductAdditionalInfo');
+        Configuration::deleteByName('ESTIMATED_DELIVERY_HOOK_displayReassurance');
+        Configuration::deleteByName('ESTIMATED_DELIVERY_HOOK_displayAfterProductName');
+        Configuration::deleteByName('ESTIMATED_DELIVERY_HOOK_displayProductButtons');
+        Configuration::deleteByName('ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery');
+
         Configuration::deleteByName('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED');
         Configuration::deleteByName('ESTIMATED_DELIVERY_COUNTDOWN_HOUR');
         Configuration::deleteByName('ESTIMATED_DELIVERY_COUNTDOWN_DAYS');
@@ -113,7 +126,13 @@ class EstimatedDelivery extends Module
             $holidays = Tools::getValue('ESTIMATED_DELIVERY_HOLIDAYS');
             $enabled = (int)Tools::getValue('ESTIMATED_DELIVERY_ENABLED');
             $text = Tools::getValue('ESTIMATED_DELIVERY_TEXT');
-            $hookPosition = Tools::getValue('ESTIMATED_DELIVERY_HOOK_POSITION');
+
+            // Salva le posizioni hook (checkbox multipli)
+            $hookDisplayProductAdditionalInfo = (int)Tools::getValue('ESTIMATED_DELIVERY_HOOK_displayProductAdditionalInfo');
+            $hookDisplayReassurance = (int)Tools::getValue('ESTIMATED_DELIVERY_HOOK_displayReassurance');
+            $hookDisplayAfterProductName = (int)Tools::getValue('ESTIMATED_DELIVERY_HOOK_displayAfterProductName');
+            $hookDisplayProductButtons = (int)Tools::getValue('ESTIMATED_DELIVERY_HOOK_displayProductButtons');
+            $hookDisplayEstimatedDelivery = (int)Tools::getValue('ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery');
 
             $countdownEnabled = (int)Tools::getValue('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED');
             $countdownHour = (int)Tools::getValue('ESTIMATED_DELIVERY_COUNTDOWN_HOUR');
@@ -134,7 +153,13 @@ class EstimatedDelivery extends Module
                 Configuration::updateValue('ESTIMATED_DELIVERY_HOLIDAYS', $validatedHolidays);
                 Configuration::updateValue('ESTIMATED_DELIVERY_ENABLED', $enabled);
                 Configuration::updateValue('ESTIMATED_DELIVERY_TEXT', pSQL($text));
-                Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_POSITION', pSQL($hookPosition));
+
+                // Salva le posizioni hook
+                Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayProductAdditionalInfo', $hookDisplayProductAdditionalInfo);
+                Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayReassurance', $hookDisplayReassurance);
+                Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayAfterProductName', $hookDisplayAfterProductName);
+                Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayProductButtons', $hookDisplayProductButtons);
+                Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery', $hookDisplayEstimatedDelivery);
 
                 Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED', $countdownEnabled);
                 Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_HOUR', $countdownHour);
@@ -206,36 +231,64 @@ class EstimatedDelivery extends Module
                         ],
                     ],
                     [
-                        'type' => 'select',
-                        'label' => $this->l('Posizione visualizzazione'),
-                        'name' => 'ESTIMATED_DELIVERY_HOOK_POSITION',
-                        'desc' => $this->l('Scegli dove visualizzare le informazioni di consegna nella pagina prodotto. Importante per Creative Elements e page builder.'),
-                        'options' => [
-                            'query' => [
-                                [
-                                    'id' => 'displayProductAdditionalInfo',
-                                    'name' => $this->l('Sotto il prezzo (displayProductAdditionalInfo) - Consigliato')
-                                ],
-                                [
-                                    'id' => 'displayReassurance',
-                                    'name' => $this->l('Zona rassicurazione (displayReassurance)')
-                                ],
-                                [
-                                    'id' => 'displayAfterProductName',
-                                    'name' => $this->l('Dopo il nome prodotto (displayAfterProductName)')
-                                ],
-                                [
-                                    'id' => 'displayProductButtons',
-                                    'name' => $this->l('Vicino ai pulsanti (displayProductButtons)')
-                                ],
-                                [
-                                    'id' => 'displayEstimatedDelivery',
-                                    'name' => $this->l('Hook personalizzato (displayEstimatedDelivery) - Solo template manuale')
-                                ],
-                            ],
-                            'id' => 'id',
-                            'name' => 'name'
-                        ]
+                        'type' => 'html',
+                        'name' => 'hook_positions_header',
+                        'html_content' => '<div class="form-group"><label class="control-label col-lg-3"><strong>' . $this->l('Posizioni visualizzazione') . '</strong></label><div class="col-lg-9"><p class="help-block">' . $this->l('Seleziona una o più posizioni dove visualizzare le informazioni di consegna. Il widget apparirà in tutte le posizioni selezionate.') . '</p></div></div>',
+                    ],
+                    [
+                        'type' => 'switch',
+                        'label' => $this->l('Sotto il prezzo - Consigliato'),
+                        'name' => 'ESTIMATED_DELIVERY_HOOK_displayProductAdditionalInfo',
+                        'desc' => $this->l('Hook: displayProductAdditionalInfo - Ideale per Creative Elements'),
+                        'is_bool' => true,
+                        'values' => [
+                            ['id' => 'hook_add_on', 'value' => 1, 'label' => $this->l('Sì')],
+                            ['id' => 'hook_add_off', 'value' => 0, 'label' => $this->l('No')]
+                        ],
+                    ],
+                    [
+                        'type' => 'switch',
+                        'label' => $this->l('Zona rassicurazione'),
+                        'name' => 'ESTIMATED_DELIVERY_HOOK_displayReassurance',
+                        'desc' => $this->l('Hook: displayReassurance'),
+                        'is_bool' => true,
+                        'values' => [
+                            ['id' => 'hook_rea_on', 'value' => 1, 'label' => $this->l('Sì')],
+                            ['id' => 'hook_rea_off', 'value' => 0, 'label' => $this->l('No')]
+                        ],
+                    ],
+                    [
+                        'type' => 'switch',
+                        'label' => $this->l('Dopo il nome prodotto'),
+                        'name' => 'ESTIMATED_DELIVERY_HOOK_displayAfterProductName',
+                        'desc' => $this->l('Hook: displayAfterProductName'),
+                        'is_bool' => true,
+                        'values' => [
+                            ['id' => 'hook_name_on', 'value' => 1, 'label' => $this->l('Sì')],
+                            ['id' => 'hook_name_off', 'value' => 0, 'label' => $this->l('No')]
+                        ],
+                    ],
+                    [
+                        'type' => 'switch',
+                        'label' => $this->l('Vicino ai pulsanti'),
+                        'name' => 'ESTIMATED_DELIVERY_HOOK_displayProductButtons',
+                        'desc' => $this->l('Hook: displayProductButtons'),
+                        'is_bool' => true,
+                        'values' => [
+                            ['id' => 'hook_btn_on', 'value' => 1, 'label' => $this->l('Sì')],
+                            ['id' => 'hook_btn_off', 'value' => 0, 'label' => $this->l('No')]
+                        ],
+                    ],
+                    [
+                        'type' => 'switch',
+                        'label' => $this->l('Hook personalizzato (uso manuale)'),
+                        'name' => 'ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery',
+                        'desc' => $this->l('Hook: displayEstimatedDelivery - Solo se richiamato manualmente nel template'),
+                        'is_bool' => true,
+                        'values' => [
+                            ['id' => 'hook_custom_on', 'value' => 1, 'label' => $this->l('Sì')],
+                            ['id' => 'hook_custom_off', 'value' => 0, 'label' => $this->l('No')]
+                        ],
                     ],
                     [
                         'type' => 'html',
@@ -422,7 +475,11 @@ class EstimatedDelivery extends Module
             'ESTIMATED_DELIVERY_HOLIDAYS' => Configuration::get('ESTIMATED_DELIVERY_HOLIDAYS'),
             'ESTIMATED_DELIVERY_ENABLED' => Configuration::get('ESTIMATED_DELIVERY_ENABLED'),
             'ESTIMATED_DELIVERY_TEXT' => Configuration::get('ESTIMATED_DELIVERY_TEXT'),
-            'ESTIMATED_DELIVERY_HOOK_POSITION' => Configuration::get('ESTIMATED_DELIVERY_HOOK_POSITION'),
+            'ESTIMATED_DELIVERY_HOOK_displayProductAdditionalInfo' => Configuration::get('ESTIMATED_DELIVERY_HOOK_displayProductAdditionalInfo'),
+            'ESTIMATED_DELIVERY_HOOK_displayReassurance' => Configuration::get('ESTIMATED_DELIVERY_HOOK_displayReassurance'),
+            'ESTIMATED_DELIVERY_HOOK_displayAfterProductName' => Configuration::get('ESTIMATED_DELIVERY_HOOK_displayAfterProductName'),
+            'ESTIMATED_DELIVERY_HOOK_displayProductButtons' => Configuration::get('ESTIMATED_DELIVERY_HOOK_displayProductButtons'),
+            'ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery' => Configuration::get('ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery'),
             'ESTIMATED_DELIVERY_COUNTDOWN_ENABLED' => Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED'),
             'ESTIMATED_DELIVERY_COUNTDOWN_HOUR' => Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_HOUR'),
             'ESTIMATED_DELIVERY_COUNTDOWN_DAYS' => Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_DAYS'),
@@ -540,7 +597,7 @@ class EstimatedDelivery extends Module
 
     /**
      * Metodo centralizzato per renderizzare le informazioni di consegna
-     * Controlla se l'hook corrente corrisponde alla posizione configurata
+     * Controlla se l'hook corrente è abilitato nella configurazione
      */
     private function renderDeliveryInfo($currentHook)
     {
@@ -548,9 +605,9 @@ class EstimatedDelivery extends Module
             return '';
         }
 
-        // Controlla se questo è l'hook selezionato nella configurazione
-        $selectedHook = Configuration::get('ESTIMATED_DELIVERY_HOOK_POSITION');
-        if ($selectedHook !== $currentHook) {
+        // Controlla se questo hook è abilitato nelle configurazioni
+        $hookConfigKey = 'ESTIMATED_DELIVERY_HOOK_' . $currentHook;
+        if (!Configuration::get($hookConfigKey)) {
             return '';
         }
 
