@@ -41,7 +41,7 @@ class EstimatedDelivery extends Module
         Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayAfterProductName', 0);
         Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayProductButtons', 0);
         Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery', 0);
-        Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayShoppingCartFooter', 0);
+        Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayExpressCheckout', 0);
 
         // Configurazioni per il countdown
         Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED', 1);
@@ -57,7 +57,7 @@ class EstimatedDelivery extends Module
             $this->registerHook('displayReassurance') && // Zona rassicurazione
             $this->registerHook('displayProductButtons') && // Vicino ai pulsanti
             $this->registerHook('displayAfterProductName') && // Dopo nome prodotto
-            $this->registerHook('displayShoppingCartFooter') && // Nel carrello
+            $this->registerHook('displayExpressCheckout') && // Carrello colonna destra
             $this->registerHook('header');
     }
 
@@ -76,7 +76,7 @@ class EstimatedDelivery extends Module
         Configuration::deleteByName('ESTIMATED_DELIVERY_HOOK_displayAfterProductName');
         Configuration::deleteByName('ESTIMATED_DELIVERY_HOOK_displayProductButtons');
         Configuration::deleteByName('ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery');
-        Configuration::deleteByName('ESTIMATED_DELIVERY_HOOK_displayShoppingCartFooter');
+        Configuration::deleteByName('ESTIMATED_DELIVERY_HOOK_displayExpressCheckout');
 
         Configuration::deleteByName('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED');
         Configuration::deleteByName('ESTIMATED_DELIVERY_COUNTDOWN_HOUR');
@@ -136,7 +136,7 @@ class EstimatedDelivery extends Module
             $hookDisplayAfterProductName = (int)Tools::getValue('ESTIMATED_DELIVERY_HOOK_displayAfterProductName');
             $hookDisplayProductButtons = (int)Tools::getValue('ESTIMATED_DELIVERY_HOOK_displayProductButtons');
             $hookDisplayEstimatedDelivery = (int)Tools::getValue('ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery');
-            $hookDisplayShoppingCartFooter = (int)Tools::getValue('ESTIMATED_DELIVERY_HOOK_displayShoppingCartFooter');
+            $hookDisplayExpressCheckout = (int)Tools::getValue('ESTIMATED_DELIVERY_HOOK_displayExpressCheckout');
 
             $countdownEnabled = (int)Tools::getValue('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED');
             $countdownHour = (int)Tools::getValue('ESTIMATED_DELIVERY_COUNTDOWN_HOUR');
@@ -164,7 +164,7 @@ class EstimatedDelivery extends Module
                 Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayAfterProductName', $hookDisplayAfterProductName);
                 Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayProductButtons', $hookDisplayProductButtons);
                 Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery', $hookDisplayEstimatedDelivery);
-                Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayShoppingCartFooter', $hookDisplayShoppingCartFooter);
+                Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayExpressCheckout', $hookDisplayExpressCheckout);
 
                 Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED', $countdownEnabled);
                 Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_HOUR', $countdownHour);
@@ -303,8 +303,8 @@ class EstimatedDelivery extends Module
                     [
                         'type' => 'switch',
                         'label' => $this->l('Nel carrello (colonna destra)'),
-                        'name' => 'ESTIMATED_DELIVERY_HOOK_displayShoppingCartFooter',
-                        'desc' => $this->l('Hook: displayShoppingCartFooter - Mostra la data di consegna nella colonna riepilogo del carrello'),
+                        'name' => 'ESTIMATED_DELIVERY_HOOK_displayExpressCheckout',
+                        'desc' => $this->l('Hook: displayExpressCheckout - Mostra la data di consegna nella colonna riepilogo, prima delle policy'),
                         'is_bool' => true,
                         'values' => [
                             ['id' => 'hook_cart_on', 'value' => 1, 'label' => $this->l('Sì')],
@@ -501,7 +501,7 @@ class EstimatedDelivery extends Module
             'ESTIMATED_DELIVERY_HOOK_displayAfterProductName' => Configuration::get('ESTIMATED_DELIVERY_HOOK_displayAfterProductName'),
             'ESTIMATED_DELIVERY_HOOK_displayProductButtons' => Configuration::get('ESTIMATED_DELIVERY_HOOK_displayProductButtons'),
             'ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery' => Configuration::get('ESTIMATED_DELIVERY_HOOK_displayEstimatedDelivery'),
-            'ESTIMATED_DELIVERY_HOOK_displayShoppingCartFooter' => Configuration::get('ESTIMATED_DELIVERY_HOOK_displayShoppingCartFooter'),
+            'ESTIMATED_DELIVERY_HOOK_displayExpressCheckout' => Configuration::get('ESTIMATED_DELIVERY_HOOK_displayExpressCheckout'),
             'ESTIMATED_DELIVERY_COUNTDOWN_ENABLED' => Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_ENABLED'),
             'ESTIMATED_DELIVERY_COUNTDOWN_HOUR' => Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_HOUR'),
             'ESTIMATED_DELIVERY_COUNTDOWN_DAYS' => Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_DAYS'),
@@ -618,11 +618,11 @@ class EstimatedDelivery extends Module
     }
 
     /**
-     * Hook standard PrestaShop - Nel carrello (colonna riepilogo)
+     * Hook standard PrestaShop - Nel carrello (colonna destra prima delle policy)
      */
-    public function hookDisplayShoppingCartFooter($params)
+    public function hookDisplayExpressCheckout($params)
     {
-        return $this->renderDeliveryInfo('displayShoppingCartFooter');
+        return $this->renderDeliveryInfo('displayExpressCheckout');
     }
 
     /**
