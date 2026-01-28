@@ -2,6 +2,11 @@
     margin: 0 0 20px 0;
 }
 
+/* Margine specifico per il carrello */
+.estimated-delivery-wrapper.cart-checkout {
+    margin-top: 24px;
+}
+
 .estimated-delivery-box {
     display: flex;
     align-items: center;
@@ -24,10 +29,10 @@
 
 @keyframes pulse {
     0%, 100% {
-        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        transform: scale(1);
     }
     50% {
-        box-shadow: 0 6px 25px rgba(245, 87, 108, 0.6);
+        transform: scale(1.02);
     }
 }
 
@@ -37,6 +42,13 @@
 
 .estimated-delivery-box.countdown-active:hover {
     box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+}
+
+/* Layout verticale per carrello e checkout */
+body#cart .estimated-delivery-box,
+body#checkout .estimated-delivery-box {
+    flex-direction: column;
+    text-align: center;
 }
 
 .estimated-delivery-box .material-icons {

@@ -1,5 +1,5 @@
 {if $display_text}
-<div class="estimated-delivery-wrapper">
+<div class="estimated-delivery-wrapper {if $current_hook == 'displayExpressCheckout'}cart-checkout{/if}">
     <div class="estimated-delivery-box {if $show_countdown}countdown-active{/if}">
         <i class="material-icons">local_shipping</i>
         <span class="estimated-delivery-text">
