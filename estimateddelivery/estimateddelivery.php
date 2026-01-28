@@ -20,8 +20,8 @@ class EstimatedDelivery extends Module
 
         parent::__construct();
 
-        $this->displayName = $this->l('Data di Consegna Stimata');
-        $this->description = $this->l('Mostra la data di consegna stimata nella scheda prodotto escludendo giorni festivi e weekend');
+        $this->displayName = $this->l('Data di Spedizione Stimata');
+        $this->description = $this->l('Mostra la data di spedizione stimata nella scheda prodotto escludendo giorni festivi e weekend');
 
         $this->confirmUninstall = $this->l('Sei sicuro di voler disinstallare questo modulo?');
     }
@@ -33,7 +33,7 @@ class EstimatedDelivery extends Module
         Configuration::updateValue('ESTIMATED_DELIVERY_EXCLUDE_SUNDAY', 1);
         Configuration::updateValue('ESTIMATED_DELIVERY_HOLIDAYS', $this->getDefaultItalianHolidays());
         Configuration::updateValue('ESTIMATED_DELIVERY_ENABLED', 1);
-        Configuration::updateValue('ESTIMATED_DELIVERY_TEXT', 'Consegna prevista entro il: {date}');
+        Configuration::updateValue('ESTIMATED_DELIVERY_TEXT', 'Spedizione prevista entro il: {date}');
 
         // Configurazioni posizioni hook (default: solo displayProductAdditionalInfo attivo)
         Configuration::updateValue('ESTIMATED_DELIVERY_HOOK_displayProductAdditionalInfo', 1);
@@ -48,8 +48,8 @@ class EstimatedDelivery extends Module
         Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_HOUR', 14);
         Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_DAYS', 1);
         Configuration::updateValue('ESTIMATED_DELIVERY_AFTER_HOURS_DAYS', 3);
-        Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_TEXT', 'Ordina entro {countdown} e ricevi il prodotto il {date}');
-        Configuration::updateValue('ESTIMATED_DELIVERY_AFTER_HOURS_TEXT', 'Ordina oggi e lo ricevi il {date}');
+        Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_TEXT', 'Ordina entro {countdown} e spediremo il prodotto il {date}');
+        Configuration::updateValue('ESTIMATED_DELIVERY_AFTER_HOURS_TEXT', 'Ordina oggi e lo spediremo il {date}');
 
         $result = parent::install() &&
             $this->registerHook('displayEstimatedDelivery') && // Hook personalizzato
@@ -223,7 +223,7 @@ class EstimatedDelivery extends Module
         $fields_form = [
             'form' => [
                 'legend' => [
-                    'title' => $this->l('Configurazione Data di Consegna'),
+                    'title' => $this->l('Configurazione Data di Spedizione'),
                     'icon' => 'icon-calendar'
                 ],
                 'input' => [
@@ -248,7 +248,7 @@ class EstimatedDelivery extends Module
                     [
                         'type' => 'html',
                         'name' => 'hook_positions_header',
-                        'html_content' => '<div class="form-group"><label class="control-label col-lg-3"><strong>' . $this->l('Posizioni visualizzazione') . '</strong></label><div class="col-lg-9"><p class="help-block">' . $this->l('Seleziona una o più posizioni dove visualizzare le informazioni di consegna. Il widget apparirà in tutte le posizioni selezionate.') . '</p></div></div>',
+                        'html_content' => '<div class="form-group"><label class="control-label col-lg-3"><strong>' . $this->l('Posizioni visualizzazione') . '</strong></label><div class="col-lg-9"><p class="help-block">' . $this->l('Seleziona una o più posizioni dove visualizzare le informazioni di spedizione. Il widget apparirà in tutte le posizioni selezionate.') . '</p></div></div>',
                     ],
                     [
                         'type' => 'switch',
@@ -314,7 +314,7 @@ class EstimatedDelivery extends Module
                         'type' => 'switch',
                         'label' => $this->l('Nel carrello (colonna destra)'),
                         'name' => 'ESTIMATED_DELIVERY_HOOK_displayExpressCheckout',
-                        'desc' => $this->l('Hook: displayExpressCheckout - Mostra la data di consegna nella colonna riepilogo, prima delle policy'),
+                        'desc' => $this->l('Hook: displayExpressCheckout - Mostra la data di spedizione nella colonna riepilogo, prima delle policy'),
                         'is_bool' => true,
                         'values' => [
                             ['id' => 'hook_cart_on', 'value' => 1, 'label' => $this->l('Sì')],
@@ -324,15 +324,15 @@ class EstimatedDelivery extends Module
                     [
                         'type' => 'html',
                         'name' => 'separator_1',
-                        'html_content' => '<hr><h4>Impostazioni Generali Consegna</h4>',
+                        'html_content' => '<hr><h4>Impostazioni Generali Spedizione</h4>',
                     ],
                     [
                         'type' => 'text',
-                        'label' => $this->l('Giorni lavorativi per la consegna'),
+                        'label' => $this->l('Giorni lavorativi per la spedizione'),
                         'name' => 'ESTIMATED_DELIVERY_DAYS',
                         'size' => 5,
                         'required' => true,
-                        'desc' => $this->l('Numero di giorni lavorativi necessari per la consegna (esclusi weekend e festivi)')
+                        'desc' => $this->l('Numero di giorni lavorativi necessari per la spedizione (esclusi weekend e festivi)')
                     ],
                     [
                         'type' => 'switch',
@@ -383,7 +383,7 @@ class EstimatedDelivery extends Module
                         'label' => $this->l('Testo da mostrare'),
                         'name' => 'ESTIMATED_DELIVERY_TEXT',
                         'size' => 60,
-                        'desc' => $this->l('Usa {date} come segnaposto per la data. Es: "Consegna prevista entro il: {date}"')
+                        'desc' => $this->l('Usa {date} come segnaposto per la data. Es: "Spedizione prevista entro il: {date}"')
                     ],
                     [
                         'type' => 'html',
@@ -419,33 +419,33 @@ class EstimatedDelivery extends Module
                     ],
                     [
                         'type' => 'text',
-                        'label' => $this->l('Giorni consegna entro countdown'),
+                        'label' => $this->l('Giorni spedizione entro countdown'),
                         'name' => 'ESTIMATED_DELIVERY_COUNTDOWN_DAYS',
                         'size' => 5,
                         'required' => true,
-                        'desc' => $this->l('Giorni lavorativi di consegna se si ordina prima dell\'ora limite')
+                        'desc' => $this->l('Giorni lavorativi di spedizione se si ordina prima dell\'ora limite')
                     ],
                     [
                         'type' => 'text',
-                        'label' => $this->l('Giorni consegna dopo countdown'),
+                        'label' => $this->l('Giorni spedizione dopo countdown'),
                         'name' => 'ESTIMATED_DELIVERY_AFTER_HOURS_DAYS',
                         'size' => 5,
                         'required' => true,
-                        'desc' => $this->l('Giorni lavorativi di consegna se si ordina dopo l\'ora limite')
+                        'desc' => $this->l('Giorni lavorativi di spedizione se si ordina dopo l\'ora limite')
                     ],
                     [
                         'type' => 'text',
                         'label' => $this->l('Testo durante countdown'),
                         'name' => 'ESTIMATED_DELIVERY_COUNTDOWN_TEXT',
                         'size' => 80,
-                        'desc' => $this->l('Usa {countdown} per il countdown e {date} per la data. Es: "Ordina entro {countdown} e ricevi il prodotto il {date}"')
+                        'desc' => $this->l('Usa {countdown} per il countdown e {date} per la data. Es: "Ordina entro {countdown} e spediremo il prodotto il {date}"')
                     ],
                     [
                         'type' => 'text',
                         'label' => $this->l('Testo dopo ora limite'),
                         'name' => 'ESTIMATED_DELIVERY_AFTER_HOURS_TEXT',
                         'size' => 80,
-                        'desc' => $this->l('Usa {date} per la data. Es: "Ordina oggi e lo ricevi il {date}"')
+                        'desc' => $this->l('Usa {date} per la data. Es: "Ordina oggi e lo spediremo il {date}"')
                     ],
                     [
                         'type' => 'html',
@@ -522,8 +522,8 @@ class EstimatedDelivery extends Module
     }
 
     /**
-     * Calcola la data di consegna stimata
-     * 
+     * Calcola la data di spedizione stimata
+     *
      * @param string|null $startDate Data di partenza (formato Y-m-d), se null usa oggi
      * @param int|null $customDeliveryDays Giorni lavorativi personalizzati, se null usa la configurazione
      * @return DateTime|null
@@ -587,7 +587,7 @@ class EstimatedDelivery extends Module
     }
 
     /**
-     * Hook personalizzato per visualizzare la consegna stimata
+     * Hook personalizzato per visualizzare la spedizione stimata
      * Richiamabile tramite {hook h='displayEstimatedDelivery'} nel template
      */
     public function hookDisplayEstimatedDelivery($params)
@@ -636,7 +636,7 @@ class EstimatedDelivery extends Module
     }
 
     /**
-     * Metodo centralizzato per renderizzare le informazioni di consegna
+     * Metodo centralizzato per renderizzare le informazioni di spedizione
      * Controlla se l'hook corrente è abilitato nella configurazione
      */
     private function renderDeliveryInfo($currentHook)
@@ -669,7 +669,7 @@ class EstimatedDelivery extends Module
             $showCountdown = true;
             $deliveryDays = (int)Configuration::get('ESTIMATED_DELIVERY_COUNTDOWN_DAYS');
 
-            // Calcola la data di consegna stimata
+            // Calcola la data di spedizione stimata
             $estimatedDate = $this->calculateEstimatedDelivery(null, $deliveryDays);
 
             if (!$estimatedDate) {
@@ -694,11 +694,11 @@ class EstimatedDelivery extends Module
             // {countdown} verrà gestito in JavaScript
 
         } elseif ($countdownEnabled && $currentHour >= $countdownHour) {
-            // Siamo dopo l'ora limite - mostra data di consegna ritardata
+            // Siamo dopo l'ora limite - mostra data di spedizione ritardata
             $showCountdown = false;
             $deliveryDays = (int)Configuration::get('ESTIMATED_DELIVERY_AFTER_HOURS_DAYS');
 
-            // Calcola la data di consegna stimata
+            // Calcola la data di spedizione stimata
             $estimatedDate = $this->calculateEstimatedDelivery(null, $deliveryDays);
 
             if (!$estimatedDate) {
