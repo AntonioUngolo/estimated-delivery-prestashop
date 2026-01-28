@@ -2,6 +2,11 @@
     margin: 0 0 20px 0;
 }
 
+/* Margine specifico per il carrello */
+.estimated-delivery-wrapper.cart-checkout {
+    margin-top: 24px;
+}
+
 .estimated-delivery-box {
     display: flex;
     align-items: center;

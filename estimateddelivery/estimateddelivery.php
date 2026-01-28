@@ -51,7 +51,7 @@ class EstimatedDelivery extends Module
         Configuration::updateValue('ESTIMATED_DELIVERY_COUNTDOWN_TEXT', 'Ordina entro {countdown} e ricevi il prodotto il {date}');
         Configuration::updateValue('ESTIMATED_DELIVERY_AFTER_HOURS_TEXT', 'Ordina oggi e lo ricevi il {date}');
 
-        return parent::install() &&
+        $result = parent::install() &&
             $this->registerHook('displayEstimatedDelivery') && // Hook personalizzato
             $this->registerHook('displayProductAdditionalInfo') && // Sotto il prezzo
             $this->registerHook('displayReassurance') && // Zona rassicurazione
@@ -59,6 +59,16 @@ class EstimatedDelivery extends Module
             $this->registerHook('displayAfterProductName') && // Dopo nome prodotto
             $this->registerHook('displayExpressCheckout') && // Carrello colonna destra
             $this->registerHook('header');
+
+        // Imposta priorità alta per displayReassurance (apparire prima degli altri moduli)
+        if ($result) {
+            $id_hook = Hook::getIdByName('displayReassurance');
+            if ($id_hook) {
+                $this->updatePosition($id_hook, false, 1);
+            }
+        }
+
+        return $result;
     }
 
     public function uninstall()
@@ -732,6 +742,7 @@ class EstimatedDelivery extends Module
             'countdown_end_time' => $showCountdown ? $countdownEndTime->format('Y-m-d H:i:s') : null,
             'delivery_days' => $deliveryDays,
             'estimated_date' => $estimatedDate ? $estimatedDate->format('Y-m-d') : null,
+            'current_hook' => $currentHook,
         ]);
 
         return $this->display(__FILE__, 'views/templates/hook/product.tpl');
